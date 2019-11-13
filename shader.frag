@@ -38,6 +38,8 @@ mat3 rotateY(float theta) {
         vec3(0, 1, 0),
         vec3(-s, 0, c)
     );
+}
+
 /**
  * Constructive solid geometry union operation on SDF-calculated distances.
  */
