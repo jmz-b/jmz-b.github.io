@@ -45,7 +45,7 @@ mat3 rotateY(float theta) {
  */
 float unionSDF(float distA, float distB) {
     return min(distA, distB);
-}}
+}
 
 /**
  * translation matrix factory.
@@ -64,13 +64,6 @@ mat4 translationMatrix(float x, float y, float z) {
  */
 vec3 translatePoint(vec3 p, float x, float y, float z) {
     return (vec4(p, 1.0) * translationMatrix(-x, -y, -z)).xyz;
-}
-
-/**
- * Constructive solid geometry union operation on SDF-calculated distances.
- */
-float unionSDF(float distA, float distB) {
-    return min(distA, distB);
 }
 
 /**
