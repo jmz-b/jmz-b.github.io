@@ -3,9 +3,135 @@
   <head>
     <meta charset="utf-8">
     <title>o_0</title>
-    <script type="text/javascript" src="https://rawgit.com/patriciogonzalezvivo/glslCanvas/master/dist/GlslCanvas.js"></script>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+      }
+
+      #c {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <canvas class="glslCanvas" data-fragment-url="shader.frag" width="500" height="500"></canvas>
+    <canvas id="c"></canvas>
   </body>
+  <script type="module">
+    import * as THREE from './node_modules/three/build/three.module.js';
+
+    const cameraConfig = {
+      fov: 40,
+      aspect: 2,
+      near: 0.1,
+      far: 1000,
+      position: [0, 0, 30],
+    };
+
+    const lightConfig = {
+      color: 0xFFFFFF,
+      intensity: 1,
+      position: [-1, 2, 4],
+    };
+
+    const textConfig = {
+      size: 3.0,
+      height: 1.0,
+      curveSegments: 12,
+      bevelEnabled: true,
+      bevelThickness: 0.15,
+      bevelSize: .3,
+      bevelSegments: 5,
+      color: 0xff0000,
+      fontUrl: 'font.json',
+    };
+
+    function resize(renderer, camera) {
+      const canvas = renderer.domElement;
+      const pixelRatio = window.devicePixelRatio;
+      const width  = canvas.clientWidth  * pixelRatio | 0;
+      const height = canvas.clientHeight * pixelRatio | 0;
+      const needResize = canvas.width !== width || canvas.height !== height;
+
+      if (needResize) {
+        renderer.setSize(width, height, false);
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      return needResize;
+    }
+
+    function loadFont(url) {
+      const fontLoader = new THREE.FontLoader();
+      return new Promise((resolve, reject) => {
+        fontLoader.load(url, resolve, undefined, reject);
+      });
+    }
+
+    function createCamera(config) {
+      const camera = new THREE.PerspectiveCamera(config.fov, config.aspect, config.near, config.far);
+      camera.position.set(...config.position);
+      return camera;
+    }
+
+    function createLight(config) {
+      const light = new THREE.DirectionalLight(config.color, config.ntensity);
+      light.position.set(...config.position);
+      return light;
+
+    }
+
+    async function createTextObject(text, config) {
+      const font = await loadFont(config.fontUrl);
+      const parent = new THREE.Object3D();
+      const material = new THREE.MeshPhongMaterial({color: config.color});
+      const geometry = new THREE.TextBufferGeometry(text, {font, ...config});
+      const mesh = new THREE.Mesh(geometry, material);
+
+      geometry.computeBoundingBox();
+      geometry.boundingBox.getCenter(mesh.position).multiplyScalar(-1);    
+
+      parent.add(mesh);
+      parent.position.set(0, 0, 0)
+
+      return parent
+    }
+
+    async function populateScene(scene, objects, lights) {
+      objects = await Promise.all(objects);
+      objects.forEach(obj => scene.add(obj));
+      lights.forEach(light => scene.add(light));
+    }
+
+    const renderer = new THREE.WebGLRenderer({canvas: document.querySelector('#c')});
+    const scene = new THREE.Scene();
+    const camera = createCamera(cameraConfig);
+
+    const objects = [
+      createTextObject('JMZ', textConfig),
+    ];
+    
+    const lights = [
+      createLight(lightConfig),
+    ];
+
+    populateScene(scene, objects, lights);
+
+    requestAnimationFrame(async function render(time) {
+      const canvas = renderer.domElement;
+      time *= 0.001;
+
+      resize(renderer, camera);
+
+      (await Promise.all(objects)).forEach((obj) => {
+        obj.rotation.y = time;
+      });
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render);
+    });
+  </script>
 </html>
