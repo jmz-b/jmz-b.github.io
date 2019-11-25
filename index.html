@@ -45,8 +45,37 @@
       bevelSize: .3,
       bevelSegments: 5,
       color: 0xff0000,
-      fontUrl: 'font.json',
+      position: [0, 0, 0],
     };
+
+    class Camera extends THREE.PerspectiveCamera {
+      constructor(config) {
+        super(config.fov, config.aspect, config.near, config.far);
+        this.position.set(...config.position);
+      }
+    }
+
+    class Light extends THREE.DirectionalLight {
+      constructor(config) {
+        super(config.color, config.intensity);
+        this.position.set(...config.position);
+      }
+    }
+
+    class TextObject extends THREE.Object3D {
+      constructor(text, font, config) {
+        const material = new THREE.MeshPhongMaterial({color: config.color});
+        const geometry = new THREE.TextBufferGeometry(text, {font, ...config});
+        const mesh = new THREE.Mesh(geometry, material);
+
+        geometry.computeBoundingBox();
+        geometry.boundingBox.getCenter(mesh.position).multiplyScalar(-1);    
+
+        super();
+        this.add(mesh);
+        this.position.set(...config.position);
+      }
+    }
 
     function resize(renderer, camera) {
       const canvas = renderer.domElement;
@@ -64,71 +93,29 @@
       return needResize;
     }
 
-    function loadFont(url) {
-      const fontLoader = new THREE.FontLoader();
-      return new Promise((resolve, reject) => {
-        fontLoader.load(url, resolve, undefined, reject);
-      });
-    }
-
-    function createCamera(config) {
-      const camera = new THREE.PerspectiveCamera(config.fov, config.aspect, config.near, config.far);
-      camera.position.set(...config.position);
-      return camera;
-    }
-
-    function createLight(config) {
-      const light = new THREE.DirectionalLight(config.color, config.ntensity);
-      light.position.set(...config.position);
-      return light;
-
-    }
-
-    async function createTextObject(text, config) {
-      const font = await loadFont(config.fontUrl);
-      const parent = new THREE.Object3D();
-      const material = new THREE.MeshPhongMaterial({color: config.color});
-      const geometry = new THREE.TextBufferGeometry(text, {font, ...config});
-      const mesh = new THREE.Mesh(geometry, material);
-
-      geometry.computeBoundingBox();
-      geometry.boundingBox.getCenter(mesh.position).multiplyScalar(-1);    
-
-      parent.add(mesh);
-      parent.position.set(0, 0, 0)
-
-      return parent
-    }
-
-    async function populateScene(scene, objects, lights) {
-      objects = await Promise.all(objects);
-      objects.forEach(obj => scene.add(obj));
-      lights.forEach(light => scene.add(light));
-    }
-
     const renderer = new THREE.WebGLRenderer({canvas: document.querySelector('#c')});
     const scene = new THREE.Scene();
-    const camera = createCamera(cameraConfig);
+    const camera = new Camera(cameraConfig);
+    const fontLoader = new THREE.FontLoader();
 
-    const objects = [
-      createTextObject('JMZ', textConfig),
-    ];
-    
-    const lights = [
-      createLight(lightConfig),
-    ];
+    const objects = [];
+    const lights = [];
 
-    populateScene(scene, objects, lights);
+    fontLoader.load('font.json', (font) => {
+      const text = new TextObject('JMZ', font, textConfig);
+      scene.add(text);
+      objects.push(text);
+    });
 
-    requestAnimationFrame(async function render(time) {
+    lights.push(new Light(lightConfig));
+    lights.forEach(light => scene.add(light));
+
+    requestAnimationFrame(function render(time) {
       const canvas = renderer.domElement;
       time *= 0.001;
 
       resize(renderer, camera);
-
-      (await Promise.all(objects)).forEach((obj) => {
-        obj.rotation.y = time;
-      });
+      objects.forEach((obj) => obj.rotation.y = time);
 
       renderer.render(scene, camera);
       requestAnimationFrame(render);
