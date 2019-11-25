@@ -21,6 +21,9 @@
   </body>
   <script type="module">
     import * as THREE from './node_modules/three/build/three.module.js';
+    import { EffectComposer } from './node_modules/three/examples/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from './node_modules/three/examples/jsm/postprocessing/RenderPass.js';
+    import { GlitchPass } from './node_modules/three/examples/jsm/postprocessing/GlitchPass.js';
 
     const cameraConfig = {
       fov: 40,
@@ -47,6 +50,11 @@
       color: 0xff0000,
       position: [0, 0, 0],
     };
+    
+    const objects = [];
+    const lights = [];
+
+    let renderer, camera, scene, composer, glitchPass, fontLoader;
 
     class Camera extends THREE.PerspectiveCamera {
       constructor(config) {
@@ -77,7 +85,7 @@
       }
     }
 
-    function resize(renderer, camera) {
+    function resize(renderer, camera, composer) {
       const canvas = renderer.domElement;
       const pixelRatio = window.devicePixelRatio;
       const width  = canvas.clientWidth  * pixelRatio | 0;
@@ -86,6 +94,7 @@
 
       if (needResize) {
         renderer.setSize(width, height, false);
+        composer.setSize(width, height);
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
       }
@@ -93,32 +102,40 @@
       return needResize;
     }
 
-    const renderer = new THREE.WebGLRenderer({canvas: document.querySelector('#c')});
-    const scene = new THREE.Scene();
-    const camera = new Camera(cameraConfig);
-    const fontLoader = new THREE.FontLoader();
+    function init() {
+      renderer = new THREE.WebGLRenderer({canvas: document.querySelector('#c')});
+      scene = new THREE.Scene();
+      camera = new Camera(cameraConfig);
+      fontLoader = new THREE.FontLoader();
+      composer = new EffectComposer(renderer);
+      glitchPass = new GlitchPass();
 
-    const objects = [];
-    const lights = [];
+      fontLoader.load('font.json', (font) => {
+        const text = new TextObject('JMZ', font, textConfig);
+        scene.add(text);
+        objects.push(text);
+      });
 
-    fontLoader.load('font.json', (font) => {
-      const text = new TextObject('JMZ', font, textConfig);
-      scene.add(text);
-      objects.push(text);
-    });
+      lights.push(new Light(lightConfig));
+      lights.forEach(light => scene.add(light));
 
-    lights.push(new Light(lightConfig));
-    lights.forEach(light => scene.add(light));
+      composer.addPass(new RenderPass(scene, camera));
+      composer.addPass(glitchPass);
+    }
 
-    requestAnimationFrame(function render(time) {
+
+    function render(time) {
       const canvas = renderer.domElement;
       time *= 0.001;
 
-      resize(renderer, camera);
+      resize(renderer, camera, composer);
       objects.forEach((obj) => obj.rotation.y = time);
 
-      renderer.render(scene, camera);
+      composer.render();
       requestAnimationFrame(render);
-    });
+    }
+
+    init();
+    render();
   </script>
 </html>
