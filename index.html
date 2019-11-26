@@ -33,9 +33,21 @@
       position: [0, 0, 30],
     };
 
-    const lightConfig = {
-      color: 0xFFFFFF,
+    const light1Config = {
+      color: 0xffffff,
       intensity: 1,
+      position: [0, 2, 1],
+    };
+
+    const light2Config = {
+      color: 0x00ff00,
+      intensity: 5,
+      position: [1, 2, 4],
+    };
+
+    const light3Config = {
+      color: 0x0000ff,
+      intensity: 5,
       position: [-1, 2, 4],
     };
 
@@ -47,7 +59,9 @@
       bevelThickness: 0.15,
       bevelSize: .3,
       bevelSegments: 5,
-      color: 0xff0000,
+      materialConfig: {
+        color: 0xff0000,
+      },
       position: [0, 0, 0],
     };
     
@@ -72,7 +86,7 @@
 
     class TextObject extends THREE.Object3D {
       constructor(text, font, config) {
-        const material = new THREE.MeshPhongMaterial({color: config.color});
+        const material = new THREE.MeshPhongMaterial(config.materialConfig);
         const geometry = new THREE.TextBufferGeometry(text, {font, ...config});
         const mesh = new THREE.Mesh(geometry, material);
 
@@ -116,7 +130,9 @@
         objects.push(text);
       });
 
-      lights.push(new Light(lightConfig));
+      lights.push(new Light(light1Config));
+      lights.push(new Light(light2Config));
+      lights.push(new Light(light3Config));
       lights.forEach(light => scene.add(light));
 
       composer.addPass(new RenderPass(scene, camera));
@@ -136,6 +152,6 @@
     }
 
     init();
-    render();
+    render(0);
   </script>
 </html>
