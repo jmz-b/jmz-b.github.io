@@ -20,10 +20,10 @@
     <canvas id="c"></canvas>
   </body>
   <script type="module">
-    import * as THREE from './node_modules/three/build/three.module.js';
-    import { EffectComposer } from './node_modules/three/examples/jsm/postprocessing/EffectComposer.js';
-    import { RenderPass } from './node_modules/three/examples/jsm/postprocessing/RenderPass.js';
-    import { GlitchPass } from './node_modules/three/examples/jsm/postprocessing/GlitchPass.js';
+    import * as THREE from 'https://unpkg.com/three@0.110.0/build/three.module.js?module';
+    import { EffectComposer } from 'https://unpkg.com/three@0.110.0/examples/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'https://unpkg.com/three@0.110.0/examples/jsm/postprocessing/RenderPass.js';
+    import { GlitchPass } from 'https://unpkg.com/three@0.110.0/examples/jsm/postprocessing/GlitchPass.js';
 
     const cameraConfig = {
       fov: 40,
@@ -52,14 +52,16 @@
     };
 
     const textConfig = {
-      size: 3.0,
-      height: 1.0,
-      curveSegments: 12,
-      bevelEnabled: true,
-      bevelThickness: 0.15,
-      bevelSize: .3,
-      bevelSegments: 5,
-      materialConfig: {
+      geometry: {
+        size: 3.0,
+        height: 1.0,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.15,
+        bevelSize: .3,
+        bevelSegments: 5,
+      },
+      material: {
         color: 0xff0000,
       },
       position: [0, 0, 0],
@@ -86,8 +88,8 @@
 
     class TextObject extends THREE.Object3D {
       constructor(text, font, config) {
-        const material = new THREE.MeshPhongMaterial(config.materialConfig);
-        const geometry = new THREE.TextBufferGeometry(text, {font, ...config});
+        const material = new THREE.MeshPhongMaterial(config.material);
+        const geometry = new THREE.TextBufferGeometry(text, {font, ...config.geometry});
         const mesh = new THREE.Mesh(geometry, material);
 
         geometry.computeBoundingBox();
